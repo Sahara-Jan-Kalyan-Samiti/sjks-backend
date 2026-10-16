@@ -1,0 +1,27 @@
+# Dependencies and build output
+node_modules/
+dist/
+coverage/
+*.tsbuildinfo
+
+# Environment files: never commit real values (the service-role key, webhook secret and SMTP password live here).
+# Only .env.example is tracked.
+.env
+.env.*
+!.env.example
+
+# Local data and credentials
+*.db
+*.db-*
+*.pem
+*.key
+service-account*.json
+
+# Logs and local tooling
+*.log
+npm-debug.log*
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+.claude/

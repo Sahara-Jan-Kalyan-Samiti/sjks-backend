@@ -1,0 +1,35 @@
+# Builds the image, stores it in Artifact Registry and deploys it to Cloud Run.
+# Trigger: GitHub push to main (production) or develop (staging). Substitutions are set on the trigger:
+#   _SERVICE      sjks-backend-prod | sjks-backend-staging
+#   _REGION       asia-south1
+#   _REPO         sjks   (Artifact Registry repository)
+steps:
+  - id: build
+    name: gcr.io/cloud-builders/docker
+    args: ["build", "-t", "${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPO}/sjks-backend:${SHORT_SHA}", "."]
+  - id: push
+    name: gcr.io/cloud-builders/docker
+    args: ["push", "${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPO}/sjks-backend:${SHORT_SHA}"]
+  - id: deploy
+    name: gcr.io/google.com/cloudsdktool/cloud-sdk
+    entrypoint: gcloud
+    args:
+      - run
+      - deploy
+      - ${_SERVICE}
+      - --image=${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPO}/sjks-backend:${SHORT_SHA}
+      - --region=${_REGION}
+      - --platform=managed
+      - --allow-unauthenticated
+      - --min-instances=1
+      - --max-instances=5
+      - --set-env-vars=NODE_ENV=production,TRUST_PROXY=true,CORS_ORIGINS=${_CORS_ORIGINS},SUPABASE_URL=${_SUPABASE_URL}
+      - --set-secrets=SUPABASE_SERVICE_ROLE_KEY=supabase-service-role-key:latest,RAZORPAY_WEBHOOK_SECRET=razorpay-webhook-secret:latest,SMTP_HOST=smtp-host:latest,SMTP_USER=smtp-user:latest,SMTP_PASS=smtp-pass:latest,SMTP_FROM=smtp-from:latest
+images:
+  - ${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPO}/sjks-backend:${SHORT_SHA}
+substitutions:
+  _REGION: asia-south1
+  _REPO: sjks
+  _SERVICE: sjks-backend-staging
+  _CORS_ORIGINS: https://staging.saharangosag.com
+  _SUPABASE_URL: https://YOUR-PROJECT.supabase.co

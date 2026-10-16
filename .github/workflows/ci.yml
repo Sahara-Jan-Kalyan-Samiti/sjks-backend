@@ -1,0 +1,24 @@
+name: CI (sjks-backend)
+
+on:
+  pull_request:
+  push:
+    branches: [dev, stage, main]
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 20, cache: npm }
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm run lint
+      - run: npm test
+      - run: npm run build
+      - run: npm audit --omit=dev --audit-level=high
+      - name: Docker image builds
+        run: docker build -t sjks-backend:ci .
+
+  # Deployment itself is done by Cloud Build triggers on this repository: stage -> staging, main -> production (see cloudbuild.yaml and README).
