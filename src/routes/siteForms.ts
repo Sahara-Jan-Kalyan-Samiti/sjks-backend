@@ -28,7 +28,12 @@ export function siteFormRoutes({ supabase }: AppDeps): Router {
     asyncHandler(async (req, res) => {
       const { website, reference, ...fields } = documentRequestSchema.parse(req.body);
       if (website) return void res.json({ ok: true }); // spam trap: pretend success, store nothing
-      const row = { ...fields, delivery_address: fields.delivery === "PDF by email" ? null : fields.delivery_address, reference: await uniqueReference(supabase, reference), status: "new" };
+      const row = {
+        ...fields,
+        delivery_address: fields.delivery === "PDF by email" ? null : fields.delivery_address,
+        reference: await uniqueReference(supabase, reference),
+        status: "new"
+      };
       const { error } = await supabase.from("document_requests").insert(row);
       if (error) throw new Error(error.message);
       res.json({ ok: true, reference: row.reference });

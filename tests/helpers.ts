@@ -45,7 +45,10 @@ export class MemoryPaymentStore implements PaymentStore {
     return created;
   }
   async updateDonation(id: number, patch: Record<string, unknown>) {
-    Object.assign(this.donations.find((d) => d.id === id)!, patch);
+    Object.assign(
+      this.donations.find((d) => d.id === id)!,
+      patch
+    );
   }
 }
 
@@ -73,10 +76,18 @@ export function fakeSupabase(tables: Record<string, unknown[]> = {}, files: Reco
     new Proxy(() => undefined, {
       get: (_t, prop) => {
         if (prop === "then") {
-          return (resolve: (v: unknown) => void) => resolve({ data: single ? (tables[table] ?? [])[0] ?? null : (tables[table] ?? []), error: null });
+          return (resolve: (v: unknown) => void) => resolve({ data: single ? ((tables[table] ?? [])[0] ?? null) : (tables[table] ?? []), error: null });
         }
-        if (prop === "insert") return (row: unknown) => { inserts.push({ table, row }); return chain(table, single); };
-        if (prop === "update") return (patch: unknown) => { updates.push({ table, patch }); return chain(table, single); };
+        if (prop === "insert")
+          return (row: unknown) => {
+            inserts.push({ table, row });
+            return chain(table, single);
+          };
+        if (prop === "update")
+          return (patch: unknown) => {
+            updates.push({ table, patch });
+            return chain(table, single);
+          };
         if (prop === "maybeSingle" || prop === "single") return () => chain(table, true);
         return () => chain(table, single);
       }
@@ -90,7 +101,10 @@ export function fakeSupabase(tables: Record<string, unknown[]> = {}, files: Reco
     },
     auth: {
       admin: {
-        createUser: async ({ email }: { email: string }) => { createdUsers.push(email); return { data: { user: { id: "new-user" } }, error: null }; },
+        createUser: async ({ email }: { email: string }) => {
+          createdUsers.push(email);
+          return { data: { user: { id: "new-user" } }, error: null };
+        },
         deleteUser: async () => ({ error: null })
       }
     }
@@ -110,5 +124,20 @@ export const sign = (body: string, secret = WEBHOOK_SECRET) => createHmac("sha25
 
 export const paymentEvent = (event: string, status: string, over: Record<string, unknown> = {}) => ({
   event,
-  payload: { payment: { entity: { id: "pay_1", status, amount: 150000, currency: "INR", method: "upi", email: "donor@example.org", contact: "+919876543210", created_at: 1786000000, notes: { name: "Asha" }, ...over } } }
+  payload: {
+    payment: {
+      entity: {
+        id: "pay_1",
+        status,
+        amount: 150000,
+        currency: "INR",
+        method: "upi",
+        email: "donor@example.org",
+        contact: "+919876543210",
+        created_at: 1786000000,
+        notes: { name: "Asha" },
+        ...over
+      }
+    }
+  }
 });

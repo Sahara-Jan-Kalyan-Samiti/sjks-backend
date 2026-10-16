@@ -32,25 +32,64 @@ const plans: Plan[] = [
   {
     table: "projects",
     key: ["name", "created_at"],
-    rows: all("SELECT * FROM projects").map((r) => ({ name: r.name, area: r.area, location: r.location, description: r.description, status: r.status, beneficiaries: r.beneficiaries ?? 0, published: bool(r.published), created_at: r.created_at }))
+    rows: all("SELECT * FROM projects").map((r) => ({
+      name: r.name,
+      area: r.area,
+      location: r.location,
+      description: r.description,
+      status: r.status,
+      beneficiaries: r.beneficiaries ?? 0,
+      published: bool(r.published),
+      created_at: r.created_at
+    }))
   },
   {
     table: "volunteers",
     key: ["name", "phone", "created_at"],
-    rows: all("SELECT * FROM volunteers").map((r) => ({ name: r.name, phone: r.phone, email: r.email, area: r.area, message: r.message, status: r.status, created_at: r.created_at }))
+    rows: all("SELECT * FROM volunteers").map((r) => ({
+      name: r.name,
+      phone: r.phone,
+      email: r.email,
+      area: r.area,
+      message: r.message,
+      status: r.status,
+      created_at: r.created_at
+    }))
   },
   {
     table: "events",
     key: ["title", "event_date"],
-    rows: all("SELECT * FROM events").map((r) => ({ title: r.title, event_date: r.event_date, event_time: r.event_time, place: r.place, description: r.description, published: bool(r.published), created_at: r.created_at }))
+    rows: all("SELECT * FROM events").map((r) => ({
+      title: r.title,
+      event_date: r.event_date,
+      event_time: r.event_time,
+      place: r.place,
+      description: r.description,
+      published: bool(r.published),
+      created_at: r.created_at
+    }))
   },
   {
     table: "document_requests",
     key: ["reference"],
     rows: all("SELECT * FROM document_requests").map((r) => ({
-      reference: r.reference, request_type: r.request_type, document_type: r.document_type, financial_year: r.financial_year, delivery: r.delivery ?? "PDF by email", delivery_address: r.delivery_address,
-      name: r.name, organisation: r.organisation, email: r.email, phone: r.phone, purpose: r.purpose, message: r.message, status: r.status, admin_message: r.admin_message,
-      sent_at: r.sent_at, completed_at: r.completed_at, created_at: r.created_at
+      reference: r.reference,
+      request_type: r.request_type,
+      document_type: r.document_type,
+      financial_year: r.financial_year,
+      delivery: r.delivery ?? "PDF by email",
+      delivery_address: r.delivery_address,
+      name: r.name,
+      organisation: r.organisation,
+      email: r.email,
+      phone: r.phone,
+      purpose: r.purpose,
+      message: r.message,
+      status: r.status,
+      admin_message: r.admin_message,
+      sent_at: r.sent_at,
+      completed_at: r.completed_at,
+      created_at: r.created_at
     }))
   },
   {
@@ -58,16 +97,41 @@ const plans: Plan[] = [
     table: "donations",
     key: ["donor_name", "donated_at", "amount", "reference"],
     rows: all("SELECT * FROM donations").map((r) => ({
-      donated_at: r.donated_at, mode: r.mode, method: r.method, status: r.status, amount: Math.round(Number(r.amount) * 100) / 100, currency: r.currency,
-      donor_name: r.donor_name, donor_email: r.donor_email, donor_phone: r.donor_phone, donor_pan: r.donor_pan, donor_address: r.donor_address,
-      purpose: r.purpose, reference: r.reference, notes: r.notes, gateway: r.gateway, gateway_payment_id: r.gateway_payment_id, gateway_order_id: r.gateway_order_id,
-      gateway_status: r.gateway_status, gateway_error: r.gateway_error, receipt_sent_at: r.receipt_sent_at, tax_receipt_issued_at: r.tax_receipt_issued_at, created_at: r.created_at
+      donated_at: r.donated_at,
+      mode: r.mode,
+      method: r.method,
+      status: r.status,
+      amount: Math.round(Number(r.amount) * 100) / 100,
+      currency: r.currency,
+      donor_name: r.donor_name,
+      donor_email: r.donor_email,
+      donor_phone: r.donor_phone,
+      donor_pan: r.donor_pan,
+      donor_address: r.donor_address,
+      purpose: r.purpose,
+      reference: r.reference,
+      notes: r.notes,
+      gateway: r.gateway,
+      gateway_payment_id: r.gateway_payment_id,
+      gateway_order_id: r.gateway_order_id,
+      gateway_status: r.gateway_status,
+      gateway_error: r.gateway_error,
+      receipt_sent_at: r.receipt_sent_at,
+      tax_receipt_issued_at: r.tax_receipt_issued_at,
+      created_at: r.created_at
     }))
   },
   {
     table: "broadcasts",
     key: ["subject", "created_at"],
-    rows: all("SELECT * FROM broadcasts").map((r) => ({ audience: r.audience, subject: r.subject, body: r.body, recipients: r.recipients ?? 0, failed: r.failed ?? 0, created_at: r.created_at }))
+    rows: all("SELECT * FROM broadcasts").map((r) => ({
+      audience: r.audience,
+      subject: r.subject,
+      body: r.body,
+      recipients: r.recipients ?? 0,
+      failed: r.failed ?? 0,
+      created_at: r.created_at
+    }))
   }
 ];
 
@@ -95,7 +159,10 @@ for (const p of plans) {
     for (const k of p.key) query = row[k] == null ? query.is(k, null) : query.eq(k, row[k] as string);
     const { data: found, error: findError } = await query;
     if (findError) throw new Error(`${p.table}: ${findError.message}`);
-    if (found?.length) { skipped++; continue; }
+    if (found?.length) {
+      skipped++;
+      continue;
+    }
     const { error } = await supabase.from(p.table).insert(row);
     if (error) throw new Error(`${p.table}: ${error.message} (row: ${JSON.stringify(row).slice(0, 200)})`);
     copied++;

@@ -41,7 +41,15 @@ describe("validators", () => {
 });
 
 describe("receipts", () => {
-  const donation: DonationRecord = { id: 42, donated_at: "2026-05-01", status: "success", amount: 1500, currency: "INR", method: "UPI", donor_name: "Asha <script>" };
+  const donation: DonationRecord = {
+    id: 42,
+    donated_at: "2026-05-01",
+    status: "success",
+    amount: 1500,
+    currency: "INR",
+    method: "UPI",
+    donor_name: "Asha <script>"
+  };
 
   it("numbers receipts by financial year and donation id", () => {
     expect(receiptNo(donation)).toBe("SJKS/2026-27/00042");

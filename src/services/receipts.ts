@@ -18,7 +18,8 @@ export interface DonationRecord {
   gateway_payment_id?: string | null;
 }
 
-const esc = (s: unknown): string => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c] as string);
+const esc = (s: unknown): string =>
+  String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c] as string);
 
 /** SJKS/2026-27/00042 (tax certificates: SJKS/TAX/2026-27/00042). The sequence is the donation id. */
 export const receiptNo = (d: Pick<DonationRecord, "id" | "donated_at">, tax = false): string =>

@@ -14,7 +14,11 @@ export function rupeesInWords(totalPaise: number): string {
   const paise = totalPaise % 100;
   if (rupees === 0 && paise === 0) return "Zero Rupees Only";
   const parts: string[] = [];
-  for (const [div, name] of [[10000000, "Crore"], [100000, "Lakh"], [1000, "Thousand"]] as const) {
+  for (const [div, name] of [
+    [10000000, "Crore"],
+    [100000, "Lakh"],
+    [1000, "Thousand"]
+  ] as const) {
     const q = Math.floor(rupees / div);
     if (q) parts.push(below1000(q) + " " + name);
     rupees %= div;

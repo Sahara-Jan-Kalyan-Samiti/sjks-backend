@@ -10,7 +10,12 @@ import { isEmail } from "../utils/validators.js";
 const createAdminSchema = z.object({
   email: z.string().trim().toLowerCase().refine(isEmail, "Email looks invalid"),
   password: z.string().min(8, "Use at least 8 characters").max(72, "Use 72 characters or fewer"),
-  display_name: z.string().trim().max(80).optional().transform((v) => v || null)
+  display_name: z
+    .string()
+    .trim()
+    .max(80)
+    .optional()
+    .transform((v) => v || null)
 });
 
 /**

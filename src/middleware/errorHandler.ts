@@ -5,8 +5,7 @@ import { log } from "../utils/logger.js";
 
 /** Wraps an async route so a thrown error reaches the error handler (Express 4 does not do this itself). */
 export const asyncHandler =
-  (fn: (req: Request, res: Response, next: NextFunction) => Promise<unknown>) =>
-  (req: Request, res: Response, next: NextFunction) => {
+  (fn: (req: Request, res: Response, next: NextFunction) => Promise<unknown>) => (req: Request, res: Response, next: NextFunction) => {
     fn(req, res, next).catch(next);
   };
 
@@ -25,6 +24,7 @@ export function errorHandler(error: unknown, req: Request, res: Response, _next:
     return;
   }
   const status = typeof (error as { status?: unknown })?.status === "number" ? (error as { status: number }).status : 500;
-  if (status >= 500) log("error", "unhandled error", { requestId: req.requestId, path: req.path, message: error instanceof Error ? error.message : String(error) });
+  if (status >= 500)
+    log("error", "unhandled error", { requestId: req.requestId, path: req.path, message: error instanceof Error ? error.message : String(error) });
   res.status(status).json({ error: status >= 500 ? "Server error" : "Request failed" });
 }

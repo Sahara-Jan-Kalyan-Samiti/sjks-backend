@@ -48,7 +48,11 @@ export function broadcastRoutes({ supabase, auth, mailer }: AppDeps): Router {
       let failed = 0;
       for (let i = 0; i < list.length; i += BATCH) {
         try {
-          await mailer.send({ bcc: list.slice(i, i + BATCH), subject, text: `${message}\n\n--\nYou receive this because you volunteered with or donated to us. Reply to this email to opt out.` });
+          await mailer.send({
+            bcc: list.slice(i, i + BATCH),
+            subject,
+            text: `${message}\n\n--\nYou receive this because you volunteered with or donated to us. Reply to this email to opt out.`
+          });
         } catch (error) {
           if (i === 0 && error instanceof HttpError && error.status === 503) throw error; // e-mail not configured
           failed += Math.min(BATCH, list.length - i);

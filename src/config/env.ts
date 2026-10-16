@@ -1,7 +1,10 @@
 import { z } from "zod";
 
 /** All settings come from environment variables (Google Secret Manager / Cloud Run in production, `.env` locally). Invalid or missing values stop the server at start-up. */
-const bool = z.enum(["true", "false"]).default("false").transform((v) => v === "true");
+const bool = z
+  .enum(["true", "false"])
+  .default("false")
+  .transform((v) => v === "true");
 
 const base = z.object({
   NODE_ENV: z.enum(["development", "test", "production"]).default("development"),
@@ -9,7 +12,15 @@ const base = z.object({
   SUPABASE_URL: z.string().url(),
   SUPABASE_SERVICE_ROLE_KEY: z.string().min(20),
   RAZORPAY_WEBHOOK_SECRET: z.string().default(""),
-  CORS_ORIGINS: z.string().default("").transform((v) => v.split(",").map((s) => s.trim()).filter(Boolean)),
+  CORS_ORIGINS: z
+    .string()
+    .default("")
+    .transform((v) =>
+      v
+        .split(",")
+        .map((s) => s.trim())
+        .filter(Boolean)
+    ),
   TRUST_PROXY: bool,
   SMTP_HOST: z.string().default(""),
   SMTP_PORT: z.coerce.number().int().positive().default(587),

@@ -49,7 +49,11 @@ export function requestRoutes({ supabase, auth, mailer }: AppDeps): Router {
     "/:id/default-message",
     requireRole("admin", "editor"),
     asyncHandler(async (req, res) => {
-      const { data } = await supabase.from("document_requests").select("id, reference, name, email, document_type, admin_message").eq("id", idParam.parse(req.params.id)).maybeSingle();
+      const { data } = await supabase
+        .from("document_requests")
+        .select("id, reference, name, email, document_type, admin_message")
+        .eq("id", idParam.parse(req.params.id))
+        .maybeSingle();
       if (!data) throw notFound("Request not found");
       res.json({ message: data.admin_message || defaultMessage(data as RequestRow), mailReady: mailer.ready });
     })
@@ -66,7 +70,8 @@ export function requestRoutes({ supabase, auth, mailer }: AppDeps): Router {
       const { data: rows } = await supabase.from("request_attachments").select("id, filename, storage_path, mime, size_bytes").eq("request_id", id);
       const attachments = (rows ?? []) as AttachmentRow[];
       if (!attachments.length) throw new HttpError(400, "Attach at least one document before sending");
-      if (attachments.reduce((sum, a) => sum + (a.size_bytes ?? 0), 0) > MAX_TOTAL_BYTES) throw new HttpError(400, "Attachments exceed 20 MB in total. Remove some or send a download link instead.");
+      if (attachments.reduce((sum, a) => sum + (a.size_bytes ?? 0), 0) > MAX_TOTAL_BYTES)
+        throw new HttpError(400, "Attachments exceed 20 MB in total. Remove some or send a download link instead.");
 
       const files = await Promise.all(
         attachments.map(async (a) => {
@@ -77,7 +82,12 @@ export function requestRoutes({ supabase, auth, mailer }: AppDeps): Router {
       );
       await mailer.send({ to: (request as RequestRow).email, subject, text: message, attachments: files });
       await supabase.from("document_requests").update({ status: "sent", sent_at: new Date().toISOString(), admin_message: message }).eq("id", id);
-      await logActivity(supabase, req.admin!, { action: "emailed", entity: "document_requests", entityId: id, summary: `Sent documents for request ${(request as RequestRow).reference ?? "#" + id}` });
+      await logActivity(supabase, req.admin!, {
+        action: "emailed",
+        entity: "document_requests",
+        entityId: id,
+        summary: `Sent documents for request ${(request as RequestRow).reference ?? "#" + id}`
+      });
       res.json({ ok: true });
     })
   );

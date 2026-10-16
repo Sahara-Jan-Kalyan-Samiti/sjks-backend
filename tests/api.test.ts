@@ -73,7 +73,10 @@ describe("staff-only routes", () => {
     const body = { email: "new@example.org", password: "longenough1" };
     expect((await request(app).post("/api/admins").send(body)).status).toBe(401);
     expect((await request(app).post("/api/admins").set("Authorization", "Bearer editor-token").send(body)).status).toBe(403);
-    const weak = await request(app).post("/api/admins").set("Authorization", "Bearer admin-token").send({ ...body, password: "short" });
+    const weak = await request(app)
+      .post("/api/admins")
+      .set("Authorization", "Bearer admin-token")
+      .send({ ...body, password: "short" });
     expect(weak.status).toBe(400);
     expect(weak.body.error).toMatch(/8 characters/);
   });
@@ -90,14 +93,18 @@ describe("public forms", () => {
   });
 
   it("rejects an invalid phone number", async () => {
-    const res = await request(createApp(makeDeps().deps)).post("/api/public/volunteers").send({ ...volunteer, phone: "12345" });
+    const res = await request(createApp(makeDeps().deps))
+      .post("/api/public/volunteers")
+      .send({ ...volunteer, phone: "12345" });
     expect(res.status).toBe(400);
     expect(res.body.error).toMatch(/phone/i);
   });
 
   it("pretends success but stores nothing when the honeypot is filled", async () => {
     const { deps, inserts } = makeDeps();
-    const res = await request(createApp(deps)).post("/api/public/volunteers").send({ ...volunteer, website: "http://spam.example" });
+    const res = await request(createApp(deps))
+      .post("/api/public/volunteers")
+      .send({ ...volunteer, website: "http://spam.example" });
     expect(res.status).toBe(200);
     expect(inserts).toHaveLength(0);
   });

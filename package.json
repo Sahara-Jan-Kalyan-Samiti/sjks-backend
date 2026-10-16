@@ -13,6 +13,8 @@
     "start": "node dist/server.js",
     "typecheck": "tsc --noEmit",
     "lint": "eslint .",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
     "test": "vitest run",
     "migrate:sqlite": "tsx --env-file=.env scripts/migrate-sqlite.ts"
   },

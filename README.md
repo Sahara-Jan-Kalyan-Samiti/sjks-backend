@@ -4,12 +4,12 @@
 
 Node.js API of the **Sahara Jan Kalyan Samiti** platform. It does only the work that must run on a server: the Razorpay payment webhook, donation receipts, e-mail (documents, receipts, broadcasts), exports and the public form endpoints.
 
-| Repository | What it is |
-|---|---|
-| sjks-frontend | Public website (Next.js) |
-| sjks-admin | Admin panel (React) |
-| **sjks-backend** (this one) | Node API on Cloud Run |
-| sjks-database | Supabase migrations, access rules, storage buckets |
+| Repository                  | What it is                                         |
+| --------------------------- | -------------------------------------------------- |
+| sjks-frontend               | Public website (Next.js)                           |
+| sjks-admin                  | Admin panel (React)                                |
+| **sjks-backend** (this one) | Node API on Cloud Run                              |
+| sjks-database               | Supabase migrations, access rules, storage buckets |
 
 ## Tech stack
 
@@ -17,14 +17,14 @@ Node.js 20.6 or newer (see `.nvmrc`) · TypeScript · Express 4 · Zod (validati
 
 ## What lives here and what does not
 
-| Done by this API | Done by the browser directly against Supabase (row-level security protects it) |
-|---|---|
-| Razorpay webhook → donations | Reading public content (gallery, blog, awards, team, reports) |
-| Receipts (print page, e-mail), 80G certificates | Admin CRUD: events, projects, volunteers, team, blog, photos, page text |
-| E-mailing documents to requesters | Recording or editing a donation (database logs it) |
-| Broadcast e-mail | Uploading files to Storage |
-| CSV export | Public form inserts through SQL functions (this API offers the same as a validated alternative) |
-| Public `events` / `projects` JSON | |
+| Done by this API                                | Done by the browser directly against Supabase (row-level security protects it)                  |
+| ----------------------------------------------- | ----------------------------------------------------------------------------------------------- |
+| Razorpay webhook → donations                    | Reading public content (gallery, blog, awards, team, reports)                                   |
+| Receipts (print page, e-mail), 80G certificates | Admin CRUD: events, projects, volunteers, team, blog, photos, page text                         |
+| E-mailing documents to requesters               | Recording or editing a donation (database logs it)                                              |
+| Broadcast e-mail                                | Uploading files to Storage                                                                      |
+| CSV export                                      | Public form inserts through SQL functions (this API offers the same as a validated alternative) |
+| Public `events` / `projects` JSON               |                                                                                                 |
 
 ## Getting started
 
@@ -36,13 +36,13 @@ curl http://localhost:8080/health    # alive
 curl http://localhost:8080/ready     # alive and the database answers
 ```
 
-| Script | Purpose |
-|---|---|
-| `npm run dev` | Watch mode (loads `.env`) |
-| `npm run typecheck` / `npm run lint` | Static checks |
-| `npm test` | Tests (payment rules, auth and roles, forms, receipts, CORS) |
-| `npm run build` / `npm start` | Compile to `dist/` and run it |
-| `npm run migrate:sqlite -- <data.db> [--apply]` | One-off import from the old SQLite server |
+| Script                                          | Purpose                                                      |
+| ----------------------------------------------- | ------------------------------------------------------------ |
+| `npm run dev`                                   | Watch mode (loads `.env`)                                    |
+| `npm run typecheck` / `npm run lint`            | Static checks                                                |
+| `npm test`                                      | Tests (payment rules, auth and roles, forms, receipts, CORS) |
+| `npm run build` / `npm start`                   | Compile to `dist/` and run it                                |
+| `npm run migrate:sqlite -- <data.db> [--apply]` | One-off import from the old SQLite server                    |
 
 ## Folder structure
 
@@ -82,23 +82,23 @@ Dockerfile · cloudbuild.yaml · .github/workflows/ci.yml
 
 Staff routes need `Authorization: Bearer <Supabase access token>` of a user with an **active** row in `admin_profiles`. Errors are `{ "error": "message" }`.
 
-| Method | Path | Who | Purpose |
-|---|---|---|---|
-| GET | `/health` | anyone | Liveness check (the process is running) |
-| GET | `/ready` | anyone | Readiness check: 200 only if Supabase answers, otherwise 503 |
-| GET | `/api/public/events` | anyone | Published events (images are full Storage URLs) |
-| GET | `/api/public/projects` | anyone | Published projects |
-| POST | `/api/public/document-requests` | anyone, 5 per 15 min | Document request from the website |
-| POST | `/api/public/volunteers` | anyone, 5 per 15 min | Volunteer sign-up |
-| POST | `/api/webhooks/razorpay` | Razorpay (HMAC signature) | Record payments and refunds |
-| GET | `/api/donations/:id/receipt?type=tax` | admin, editor | Printable receipt or 80G certificate |
-| POST | `/api/donations/:id/send-receipt` | admin | E-mail it to the donor. Body `{ "type": "tax" }` optional |
-| GET | `/api/exports/donations.csv` | admin | All donations (formula-injection safe) |
-| GET | `/api/requests/:id/default-message` | admin, editor | Pre-filled message for the documents e-mail |
-| POST | `/api/requests/:id/send` | admin | E-mail the attached documents. Body `{ subject, message }` |
-| GET | `/api/broadcast` | admin | Audience sizes and history |
-| POST | `/api/admins` | admin | Create a staff account (service role; public sign-up stays off). Body `{ email, password, display_name? }` |
-| POST | `/api/broadcast` | admin | Send. Body `{ audience: "volunteers"|"donors"|"all", subject, message }` |
+| Method | Path                                  | Who                       | Purpose                                                                                                    |
+| ------ | ------------------------------------- | ------------------------- | ---------------------------------------------------------------------------------------------------------- |
+| GET    | `/health`                             | anyone                    | Liveness check (the process is running)                                                                    |
+| GET    | `/ready`                              | anyone                    | Readiness check: 200 only if Supabase answers, otherwise 503                                               |
+| GET    | `/api/public/events`                  | anyone                    | Published events (images are full Storage URLs)                                                            |
+| GET    | `/api/public/projects`                | anyone                    | Published projects                                                                                         |
+| POST   | `/api/public/document-requests`       | anyone, 5 per 15 min      | Document request from the website                                                                          |
+| POST   | `/api/public/volunteers`              | anyone, 5 per 15 min      | Volunteer sign-up                                                                                          |
+| POST   | `/api/webhooks/razorpay`              | Razorpay (HMAC signature) | Record payments and refunds                                                                                |
+| GET    | `/api/donations/:id/receipt?type=tax` | admin, editor             | Printable receipt or 80G certificate                                                                       |
+| POST   | `/api/donations/:id/send-receipt`     | admin                     | E-mail it to the donor. Body `{ "type": "tax" }` optional                                                  |
+| GET    | `/api/exports/donations.csv`          | admin                     | All donations (formula-injection safe)                                                                     |
+| GET    | `/api/requests/:id/default-message`   | admin, editor             | Pre-filled message for the documents e-mail                                                                |
+| POST   | `/api/requests/:id/send`              | admin                     | E-mail the attached documents. Body `{ subject, message }`                                                 |
+| GET    | `/api/broadcast`                      | admin                     | Audience sizes and history                                                                                 |
+| POST   | `/api/admins`                         | admin                     | Create a staff account (service role; public sign-up stays off). Body `{ email, password, display_name? }` |
+| POST   | `/api/broadcast`                      | admin                     | Send. Body `{ audience: "volunteers"                                                                       | "donors" | "all", subject, message }` |
 
 ### Payment rules (tested in `tests/payments.test.ts`)
 
@@ -113,20 +113,20 @@ Staff routes need `Authorization: Bearer <Supabase access token>` of a user with
 
 See `.env.example`. In production, secrets come from **Google Secret Manager** (never from git).
 
-| Variable | Secret | Purpose |
-|---|---|---|
-| `SUPABASE_URL` | no | Project URL |
-| `SUPABASE_SERVICE_ROLE_KEY` | **yes** | Full database access |
-| `RAZORPAY_WEBHOOK_SECRET` | **yes** | Verify webhooks. Required when `NODE_ENV=production`: the server refuses to start without it |
-| `CORS_ORIGINS` | prod | Website and admin origins, comma separated. Locally: `http://localhost:3000,http://localhost:5174` |
-| `TRUST_PROXY` | no | `true` on Cloud Run |
-| `SMTP_HOST` `SMTP_PORT` `SMTP_USER` `SMTP_PASS` `SMTP_FROM` | pass: **yes** | Outgoing e-mail (without it, send endpoints answer 503 with a clear message) |
-| `PORT` | no | Set by Cloud Run (8080) |
+| Variable                                                    | Secret        | Purpose                                                                                            |
+| ----------------------------------------------------------- | ------------- | -------------------------------------------------------------------------------------------------- |
+| `SUPABASE_URL`                                              | no            | Project URL                                                                                        |
+| `SUPABASE_SERVICE_ROLE_KEY`                                 | **yes**       | Full database access                                                                               |
+| `RAZORPAY_WEBHOOK_SECRET`                                   | **yes**       | Verify webhooks. Required when `NODE_ENV=production`: the server refuses to start without it       |
+| `CORS_ORIGINS`                                              | prod          | Website and admin origins, comma separated. Locally: `http://localhost:3000,http://localhost:5174` |
+| `TRUST_PROXY`                                               | no            | `true` on Cloud Run                                                                                |
+| `SMTP_HOST` `SMTP_PORT` `SMTP_USER` `SMTP_PASS` `SMTP_FROM` | pass: **yes** | Outgoing e-mail (without it, send endpoints answer 503 with a clear message)                       |
+| `PORT`                                                      | no            | Set by Cloud Run (8080)                                                                            |
 
 ## Deployment (Google Cloud Run)
 
 1. Artifact Registry repository `sjks` and a Cloud Run service per environment (`sjks-backend-staging`, `sjks-backend-prod`), region `asia-south1`.
-2. Store the secrets in Secret Manager: `supabase-service-role-key`, `razorpay-webhook-secret`, `smtp-host`, `smtp-user`, `smtp-pass`, `smtp-from`; give the Cloud Run service account the *Secret Manager Secret Accessor* role.
+2. Store the secrets in Secret Manager: `supabase-service-role-key`, `razorpay-webhook-secret`, `smtp-host`, `smtp-user`, `smtp-pass`, `smtp-from`; give the Cloud Run service account the _Secret Manager Secret Accessor_ role.
 3. Create a Cloud Build trigger per branch (`stage` → staging, `main` → production) using `cloudbuild.yaml` and set the substitutions `_SERVICE`, `_CORS_ORIGINS`, `_SUPABASE_URL`.
 4. Map the domain `api.saharangosag.com` to the service.
 5. Set the Razorpay webhook to `https://api.saharangosag.com/api/webhooks/razorpay` with the same secret.
@@ -140,6 +140,7 @@ See `.env.example`. In production, secrets come from **Google Secret Manager** (
 npm run migrate:sqlite -- /path/to/data.db            # dry run
 npm run migrate:sqlite -- /path/to/data.db --apply    # copy into Supabase
 ```
+
 Not migrated on purpose: `admin_users` (create the staff in Supabase Auth and run `create_admin_profile.sql` from `sjks-database`), `activity_log`, and uploaded files (copy them to the Storage buckets).
 
 ## Security notes
@@ -151,12 +152,12 @@ Not migrated on purpose: `admin_users` (create the staff in Supabase Auth and ru
 
 ## Branches and contributing
 
-| Branch | Purpose |
-|---|---|
-| `main` | Production. Cloud Build deploys it to the production Cloud Run service |
-| `stage` | Staging. Deploys to the staging service |
-| `dev` | Integration. Runs the checks only |
-| `<name>-dev` (for example `kaif-dev`) | Personal working branch |
+| Branch                                | Purpose                                                                |
+| ------------------------------------- | ---------------------------------------------------------------------- |
+| `main`                                | Production. Cloud Build deploys it to the production Cloud Run service |
+| `stage`                               | Staging. Deploys to the staging service                                |
+| `dev`                                 | Integration. Runs the checks only                                      |
+| `<name>-dev` (for example `kaif-dev`) | Personal working branch                                                |
 
 Work on your own branch, open a pull request into `dev`, then promote `dev` → `stage` → `main` by pull request. Do not commit directly to `main` or `stage`. Payment and receipt logic must come with tests. A change that needs a new table or column goes into `sjks-database` first.
 

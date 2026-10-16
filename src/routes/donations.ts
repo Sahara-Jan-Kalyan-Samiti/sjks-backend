@@ -10,7 +10,21 @@ import { HttpError, notFound } from "../utils/errors.js";
 import { idParam, receiptQuerySchema } from "../utils/validators.js";
 import { z } from "zod";
 
-const CSV_COLUMNS = ["receipt_no", "donated_at", "mode", "method", "status", "amount", "currency", "donor_name", "donor_email", "donor_pan", "purpose", "reference", "gateway_payment_id"];
+const CSV_COLUMNS = [
+  "receipt_no",
+  "donated_at",
+  "mode",
+  "method",
+  "status",
+  "amount",
+  "currency",
+  "donor_name",
+  "donor_email",
+  "donor_pan",
+  "purpose",
+  "reference",
+  "gateway_payment_id"
+];
 const sendReceiptSchema = z.object({ type: z.enum(["tax", "receipt"]).optional() });
 
 /**
@@ -33,7 +47,12 @@ export function donationRoutes({ supabase, auth, mailer }: AppDeps, options: { e
       "/donations.csv",
       requireRole("admin"),
       asyncHandler(async (_req, res) => {
-        const { data, error } = await supabase.from("donations").select("*").order("donated_at", { ascending: true }).order("id", { ascending: true }).limit(50000);
+        const { data, error } = await supabase
+          .from("donations")
+          .select("*")
+          .order("donated_at", { ascending: true })
+          .order("id", { ascending: true })
+          .limit(50000);
         if (error) throw new Error(error.message);
         const rows = ((data ?? []) as DonationRecord[]).map((d) => ({ ...d, receipt_no: receiptNo(d) }));
         res.type("text/csv; charset=utf-8").setHeader("Content-Disposition", 'attachment; filename="donations.csv"');
@@ -71,8 +90,16 @@ export function donationRoutes({ supabase, auth, mailer }: AppDeps, options: { e
         html: renderReceipt(donation, { tax: wantsTax })
       });
       const now = new Date().toISOString();
-      await supabase.from("donations").update({ receipt_sent_at: now, ...(wantsTax ? { tax_receipt_issued_at: now } : {}) }).eq("id", donation.id);
-      await logActivity(supabase, req.admin!, { action: "emailed", entity: "donations", entityId: donation.id, summary: `Emailed ${wantsTax ? "tax receipt" : "receipt"} for donation #${donation.id}` });
+      await supabase
+        .from("donations")
+        .update({ receipt_sent_at: now, ...(wantsTax ? { tax_receipt_issued_at: now } : {}) })
+        .eq("id", donation.id);
+      await logActivity(supabase, req.admin!, {
+        action: "emailed",
+        entity: "donations",
+        entityId: donation.id,
+        summary: `Emailed ${wantsTax ? "tax receipt" : "receipt"} for donation #${donation.id}`
+      });
       res.json({ ok: true });
     })
   );

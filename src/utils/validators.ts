@@ -16,7 +16,10 @@ export function isPhone(v: string): boolean {
 
 const text = (max: number) => z.string().trim().max(max);
 const required = (label: string, max: number) => text(max).min(1, `${label} is required`);
-const optional = (max: number) => text(max).optional().transform((v) => v || null);
+const optional = (max: number) =>
+  text(max)
+    .optional()
+    .transform((v) => v || null);
 const phone = z.string().trim().max(30).refine(isPhone, "Phone number looks invalid");
 const email = z.string().trim().refine(isEmail, "Email looks invalid");
 
@@ -25,7 +28,9 @@ export const documentRequestSchema = z
     request_type: z.enum(["Certificate", "Audit report"]),
     document_type: required("Document type", 200),
     financial_year: optional(40),
-    delivery: text(80).optional().transform((v) => v || "PDF by email"),
+    delivery: text(80)
+      .optional()
+      .transform((v) => v || "PDF by email"),
     delivery_address: optional(400),
     name: required("Name", 120),
     organisation: optional(160),
@@ -41,7 +46,12 @@ export const documentRequestSchema = z
 export const volunteerSchema = z.object({
   name: required("Name", 120),
   phone,
-  email: z.string().trim().optional().transform((v) => v || null).refine((v) => v === null || isEmail(v), "Email looks invalid"),
+  email: z
+    .string()
+    .trim()
+    .optional()
+    .transform((v) => v || null)
+    .refine((v) => v === null || isEmail(v), "Email looks invalid"),
   area: optional(80),
   message: optional(2000),
   website: z.string().optional()
