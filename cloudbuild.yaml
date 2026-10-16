@@ -1,5 +1,5 @@
 # Builds the image, stores it in Artifact Registry and deploys it to Cloud Run.
-# Trigger: GitHub push to main (production) or develop (staging). Substitutions are set on the trigger:
+# Trigger: GitHub push to main (production) or stage (staging). Substitutions are set on the trigger:
 #   _SERVICE      sjks-backend-prod | sjks-backend-staging
 #   _REGION       asia-south1
 #   _REPO         sjks   (Artifact Registry repository)

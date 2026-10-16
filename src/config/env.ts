@@ -3,7 +3,7 @@ import { z } from "zod";
 /** All settings come from environment variables (Google Secret Manager / Cloud Run in production, `.env` locally). Invalid or missing values stop the server at start-up. */
 const bool = z.enum(["true", "false"]).default("false").transform((v) => v === "true");
 
-const schema = z.object({
+const base = z.object({
   NODE_ENV: z.enum(["development", "test", "production"]).default("development"),
   PORT: z.coerce.number().int().positive().default(8080),
   SUPABASE_URL: z.string().url(),
@@ -16,6 +16,13 @@ const schema = z.object({
   SMTP_USER: z.string().default(""),
   SMTP_PASS: z.string().default(""),
   SMTP_FROM: z.string().default("")
+});
+
+/** In production a missing webhook secret or CORS list would silently disable payments or open the API wrongly, so it stops the start-up. */
+const schema = base.superRefine((env, ctx) => {
+  if (env.NODE_ENV !== "production") return;
+  if (!env.RAZORPAY_WEBHOOK_SECRET) ctx.addIssue({ code: "custom", path: ["RAZORPAY_WEBHOOK_SECRET"], message: "required in production" });
+  if (!env.CORS_ORIGINS.length) ctx.addIssue({ code: "custom", path: ["CORS_ORIGINS"], message: "required in production" });
 });
 
 export type Env = z.infer<typeof schema>;

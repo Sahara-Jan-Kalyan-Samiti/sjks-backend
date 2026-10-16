@@ -64,26 +64,46 @@ export const admins: Record<string, AdminUser> = {
 };
 export const fakeAuth: Authenticator = { verify: async (token) => admins[token] ?? null };
 
-/** A Supabase stand-in that records inserts and answers every read with "nothing found". */
-export function fakeSupabase() {
+/** A Supabase stand-in with canned table rows. It records inserts and updates; reads return the rows given for that table. */
+export function fakeSupabase(tables: Record<string, unknown[]> = {}, files: Record<string, string> = {}) {
   const inserts: { table: string; row: unknown }[] = [];
-  const chain = (table: string): unknown =>
+  const updates: { table: string; patch: unknown }[] = [];
+  const createdUsers: string[] = [];
+  const chain = (table: string, single = false): unknown =>
     new Proxy(() => undefined, {
       get: (_t, prop) => {
-        if (prop === "then") return (resolve: (v: unknown) => void) => resolve({ data: [], error: null });
-        if (prop === "insert") return (row: unknown) => { inserts.push({ table, row }); return chain(table); };
-        return () => chain(table);
+        if (prop === "then") {
+          return (resolve: (v: unknown) => void) => resolve({ data: single ? (tables[table] ?? [])[0] ?? null : (tables[table] ?? []), error: null });
+        }
+        if (prop === "insert") return (row: unknown) => { inserts.push({ table, row }); return chain(table, single); };
+        if (prop === "update") return (patch: unknown) => { updates.push({ table, patch }); return chain(table, single); };
+        if (prop === "maybeSingle" || prop === "single") return () => chain(table, true);
+        return () => chain(table, single);
       }
     });
-  return { client: { from: (table: string) => chain(table) } as unknown as SupabaseClient, inserts };
+  const client = {
+    from: (table: string) => chain(table),
+    storage: {
+      from: () => ({
+        download: async (path: string) => (path in files ? { data: new Blob([files[path]]), error: null } : { data: null, error: { message: "not found" } })
+      })
+    },
+    auth: {
+      admin: {
+        createUser: async ({ email }: { email: string }) => { createdUsers.push(email); return { data: { user: { id: "new-user" } }, error: null }; },
+        deleteUser: async () => ({ error: null })
+      }
+    }
+  } as unknown as SupabaseClient;
+  return { client, inserts, updates, createdUsers };
 }
 
-export function makeDeps(overrides: Partial<AppDeps> = {}) {
+export function makeDeps(overrides: Partial<AppDeps> = {}, tables: Record<string, unknown[]> = {}, files: Record<string, string> = {}) {
   const payments = new MemoryPaymentStore();
   const mailer = new FakeMailer();
-  const sb = fakeSupabase();
+  const sb = fakeSupabase(tables, files);
   const deps: AppDeps = { env: testEnv(), supabase: sb.client, auth: fakeAuth, payments, mailer, ...overrides };
-  return { deps, payments, mailer, inserts: sb.inserts };
+  return { deps, payments, mailer, inserts: sb.inserts, updates: sb.updates, createdUsers: sb.createdUsers };
 }
 
 export const sign = (body: string, secret = WEBHOOK_SECRET) => createHmac("sha256", secret).update(body).digest("hex");

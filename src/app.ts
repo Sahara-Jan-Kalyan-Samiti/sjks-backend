@@ -47,7 +47,7 @@ export function createApp(deps: AppDeps): Express {
   );
   app.use(express.json({ limit: "100kb" }));
 
-  app.use(healthRoutes());
+  app.use(healthRoutes(deps.supabase));
   app.use("/api", apiLimiter);
   app.use("/api/public", publicRoutes(deps), siteFormRoutes(deps));
   app.use("/api/donations", donationRoutes(deps));
