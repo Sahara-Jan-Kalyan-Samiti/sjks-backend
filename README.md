@@ -58,7 +58,7 @@ src/
     rateLimit.ts          Per-IP limits (forms: 5 per 15 minutes)
     requestContext.ts     Request id and one log line per request
     errorHandler.ts       asyncHandler, JSON errors; server errors are logged, never shown
-  routes/
+  routes/                 Thin: read and validate the request, call a service, send the response
     health.ts             GET /health (alive), GET /ready (database reachable)
     public.ts             GET /api/public/events, /api/public/projects
     siteForms.ts          POST /api/public/document-requests, /api/public/volunteers
@@ -67,9 +67,14 @@ src/
     requests.ts           E-mail the documents of a request
     broadcast.ts          Broadcast e-mail
     admins.ts             Create staff accounts
-  services/
+  services/               The actual work: queries, rules and e-mails (no Express in here)
     payments.ts           Webhook rules (idempotent, forward-only states, refunds)
     paymentStore.ts       Supabase implementation of the payment store
+    donations.ts          Load a donation, CSV export, e-mail a receipt or 80G certificate
+    documentRequests.ts   Request references, default message, e-mail the documents
+    broadcast.ts          Audiences, sending in BCC batches
+    adminAccounts.ts      Create a staff account and its profile
+    publicContent.ts      Public events and projects, volunteer sign-up
     receipts.ts           Receipt and 80G certificate HTML
     mailer.ts, activity.ts, supabase.ts
   utils/                  money (paise), csv, validators (Zod), errors, logger

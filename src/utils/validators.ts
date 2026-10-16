@@ -65,3 +65,15 @@ export const broadcastSchema = z.object({
   message: required("Message", 5000)
 });
 export const idParam = z.coerce.number().int().positive();
+
+export const sendReceiptSchema = z.object({ type: z.enum(["tax", "receipt"]).optional() });
+export const createAdminSchema = z.object({
+  email: z.string().trim().toLowerCase().refine(isEmail, "Email looks invalid"),
+  password: z.string().min(8, "Use at least 8 characters").max(72, "Use 72 characters or fewer"),
+  display_name: z
+    .string()
+    .trim()
+    .max(80)
+    .optional()
+    .transform((v) => v || null)
+});
