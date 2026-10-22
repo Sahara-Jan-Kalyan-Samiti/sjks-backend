@@ -37,7 +37,10 @@ export function donationRoutes({ supabase, auth, mailer }: AppDeps, options: { e
       const { type } = receiptQuerySchema.parse(req.query);
       if (!canIssueReceipt(donation)) throw new HttpError(400, "Only successful donations get a receipt");
       const nonce = randomBytes(16).toString("base64");
-      res.setHeader("Content-Security-Policy", `default-src 'none'; style-src 'unsafe-inline'; script-src 'nonce-${nonce}'; frame-ancestors 'none'`);
+      res.setHeader(
+        "Content-Security-Policy",
+        `default-src 'none'; img-src data:; style-src 'unsafe-inline'; script-src 'nonce-${nonce}'; frame-ancestors 'none'`
+      );
       res.type("html").send(renderReceipt(donation, { tax: type === "tax", forPage: true, nonce }));
     })
   );
