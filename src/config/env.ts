@@ -11,6 +11,8 @@ const base = z.object({
   PORT: z.coerce.number().int().positive().default(8080),
   SUPABASE_URL: z.string().url(),
   SUPABASE_SERVICE_ROLE_KEY: z.string().min(20),
+  RAZORPAY_KEY_ID: z.string().default(""),
+  RAZORPAY_KEY_SECRET: z.string().default(""),
   RAZORPAY_WEBHOOK_SECRET: z.string().default(""),
   CORS_ORIGINS: z
     .string()

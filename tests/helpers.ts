@@ -3,6 +3,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type { AppDeps } from "../src/app.js";
 import { parseEnv } from "../src/config/env.js";
 import type { AdminUser, Authenticator } from "../src/middleware/requireAuth.js";
+import type { PaymentGateway } from "../src/services/gateway.js";
 import type { Mailer, MailOptions } from "../src/services/mailer.js";
 import { DuplicateDonationError, type DonationInsert, type PaymentDonation, type PaymentStore } from "../src/services/payments.js";
 
@@ -60,6 +61,18 @@ export class FakeMailer implements Mailer {
   }
 }
 
+export const KEY_SECRET = "key-secret";
+export const fakeGateway = (): PaymentGateway & { orders: unknown[] } => ({
+  ready: true,
+  keyId: "rzp_test_key",
+  orders: [],
+  async createOrder(order) {
+    this.orders.push(order);
+    return { id: "order_TEST123456" };
+  },
+  verifyPayment: (orderId, paymentId, signature) => signature === createHmac("sha256", KEY_SECRET).update(`${orderId}|${paymentId}`).digest("hex")
+});
+
 export const admins: Record<string, AdminUser> = {
   "admin-token": { id: "u1", email: "admin@example.org", label: "Admin", role: "admin" },
   "editor-token": { id: "u2", email: "editor@example.org", label: "Editor", role: "editor" },
@@ -116,7 +129,7 @@ export function makeDeps(overrides: Partial<AppDeps> = {}, tables: Record<string
   const payments = new MemoryPaymentStore();
   const mailer = new FakeMailer();
   const sb = fakeSupabase(tables, files);
-  const deps: AppDeps = { env: testEnv(), supabase: sb.client, auth: fakeAuth, payments, mailer, ...overrides };
+  const deps: AppDeps = { env: testEnv(), supabase: sb.client, auth: fakeAuth, payments, gateway: fakeGateway(), mailer, ...overrides };
   return { deps, payments, mailer, inserts: sb.inserts, updates: sb.updates, createdUsers: sb.createdUsers };
 }
 

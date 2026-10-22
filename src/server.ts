@@ -1,6 +1,7 @@
 import { createApp } from "./app.js";
 import { parseEnv } from "./config/env.js";
 import { createSupabaseAuthenticator } from "./middleware/requireAuth.js";
+import { createGateway } from "./services/gateway.js";
 import { createMailer } from "./services/mailer.js";
 import { createPaymentStore } from "./services/paymentStore.js";
 import { createSupabase } from "./services/supabase.js";
@@ -18,7 +19,7 @@ function loadEnv() {
 
 const env = loadEnv();
 const supabase = createSupabase(env);
-const app = createApp({ env, supabase, auth: createSupabaseAuthenticator(supabase), payments: createPaymentStore(supabase), mailer: createMailer(env) });
+const app = createApp({ env, supabase, auth: createSupabaseAuthenticator(supabase), payments: createPaymentStore(supabase), gateway: createGateway(env), mailer: createMailer(env) });
 
 const server = app.listen(env.PORT, () => log("info", "sjks-backend listening", { port: env.PORT, env: env.NODE_ENV }));
 

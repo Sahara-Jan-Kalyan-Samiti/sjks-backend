@@ -1,7 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { DuplicateDonationError, type PaymentDonation, type PaymentStore } from "./payments.js";
 
-const COLUMNS = "id,status,amount,donor_name,donor_email,donor_phone,notes";
+const COLUMNS = "id,status,amount,donor_name,donor_email,donor_phone,donor_pan,notes";
 const UNIQUE_VIOLATION = "23505";
 
 /** PaymentStore backed by Supabase (tables `donations` and `payment_webhook_events`). */

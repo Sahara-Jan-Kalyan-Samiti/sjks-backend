@@ -25,6 +25,12 @@ const esc = (s: unknown): string =>
 export const receiptNo = (d: Pick<DonationRecord, "id" | "donated_at">, tax = false): string =>
   `${orgConfig.receiptPrefix}/${tax ? "TAX/" : ""}${financialYear(d.donated_at)}/${String(d.id).padStart(5, "0")}`;
 
+/** "2026-04-01" → "01-04-2026" (the database column is a plain date). */
+export const formatDate = (iso: string): string => (/^\d{4}-\d{2}-\d{2}/.test(iso) ? iso.slice(0, 10).split("-").reverse().join("-") : iso);
+
+/** A receipt acknowledges money received, so only successful donations get one (pending, failed and refunded ones do not). */
+export const canIssueReceipt = (d: Pick<DonationRecord, "status">): boolean => d.status === "success";
+
 /** Is a tax certificate allowed for this donation? */
 export function taxEligibility(d: DonationRecord): { ok: boolean; reason: string } {
   const t = orgConfig.taxReceipt;
@@ -64,7 +70,7 @@ export function renderReceipt(d: DonationRecord, { tax = false, forPage = false,
   const heading = isTax ? (t.type === "501c3" ? "Donation Tax Receipt" : "Donation Certificate (Section 80G)") : "Donation Receipt";
   const body = `<div class="sheet"><h1>${esc(o.name)}</h1><div class="muted">${esc(o.address)}<br>${esc(o.email)} · ${esc(o.phone)} · PAN ${esc(o.pan)}</div>
 <h2>${heading}</h2>
-<table>${row("Receipt No.", receiptNo(d, isTax))}${row("Date of donation", d.donated_at)}${row("Received from", d.donor_name || "Well-wisher")}${isTax || d.donor_pan ? row("Donor PAN", d.donor_pan) : ""}${row("Address", d.donor_address)}${row("Email", d.donor_email)}
+<table>${row("Receipt No.", receiptNo(d, isTax))}${row("Date of donation", formatDate(d.donated_at))}${row("Received from", d.donor_name || "Well-wisher")}${isTax || d.donor_pan ? row("Donor PAN", d.donor_pan) : ""}${row("Address", d.donor_address)}${row("Email", d.donor_email)}
 ${row("Amount", amountText)}${d.currency === "INR" ? row("Amount in words", rupeesInWords(toPaise(amount))) : ""}${row("Mode of payment", [d.method, d.mode].filter(Boolean).join(" / "))}${row("Payment reference", d.gateway_payment_id || d.reference)}${row("Purpose", d.purpose)}</table>
 <p class="note">${statement}</p><div class="sig">For ${esc(o.name)}<br><br>${esc(o.signatory)}</div></div>`;
   if (!forPage) return `<!doctype html><html><head><meta charset="utf-8"><style>${CSS}</style></head><body>${body}</body></html>`;

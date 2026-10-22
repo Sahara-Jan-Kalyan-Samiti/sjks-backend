@@ -4,7 +4,8 @@ import type { AppDeps } from "../app.js";
 import { asyncHandler } from "../middleware/errorHandler.js";
 import { requireAuth, requireRole } from "../middleware/requireAuth.js";
 import { emailReceipt, exportDonationsCsv, loadDonation } from "../services/donations.js";
-import { renderReceipt } from "../services/receipts.js";
+import { canIssueReceipt, renderReceipt } from "../services/receipts.js";
+import { HttpError } from "../utils/errors.js";
 import { idParam, receiptQuerySchema, sendReceiptSchema } from "../utils/validators.js";
 
 /**
@@ -34,6 +35,7 @@ export function donationRoutes({ supabase, auth, mailer }: AppDeps, options: { e
     asyncHandler(async (req, res) => {
       const donation = await loadDonation(supabase, idParam.parse(req.params.id));
       const { type } = receiptQuerySchema.parse(req.query);
+      if (!canIssueReceipt(donation)) throw new HttpError(400, "Only successful donations get a receipt");
       const nonce = randomBytes(16).toString("base64");
       res.setHeader("Content-Security-Policy", `default-src 'none'; style-src 'unsafe-inline'; script-src 'nonce-${nonce}'; frame-ancestors 'none'`);
       res.type("html").send(renderReceipt(donation, { tax: type === "tax", forPage: true, nonce }));

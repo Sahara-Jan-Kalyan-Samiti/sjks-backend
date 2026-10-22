@@ -4,7 +4,7 @@ import { toCsv } from "../utils/csv.js";
 import { HttpError, notFound } from "../utils/errors.js";
 import { logActivity } from "./activity.js";
 import type { Mailer } from "./mailer.js";
-import { receiptNo, renderReceipt, taxEligibility, type DonationRecord } from "./receipts.js";
+import { canIssueReceipt, receiptNo, renderReceipt, taxEligibility, type DonationRecord } from "./receipts.js";
 
 const CSV_COLUMNS = [
   "receipt_no",
@@ -52,6 +52,7 @@ export async function emailReceipt(
 ): Promise<void> {
   const donation = await loadDonation(supabase, donationId);
   if (!donation.donor_email) throw new HttpError(400, "This donation has no donor email");
+  if (!canIssueReceipt(donation)) throw new HttpError(400, "Only successful donations can get a receipt");
   const eligibility = taxEligibility(donation);
   if (wantsTax && !eligibility.ok) throw new HttpError(400, eligibility.reason);
 
@@ -73,4 +74,43 @@ export async function emailReceipt(
     entityId: donation.id,
     summary: `Emailed ${wantsTax ? "tax receipt" : "receipt"} for donation #${donation.id}`
   });
+}
+
+/** One donation by its Razorpay payment id, or null (the webhook may not have saved it yet). */
+export async function findDonationByPayment(supabase: SupabaseClient, paymentId: string): Promise<DonationRecord | null> {
+  const { data, error } = await supabase.from("donations").select("*").eq("gateway_payment_id", paymentId).maybeSingle();
+  if (error) throw new Error(error.message);
+  return (data as DonationRecord | null) ?? null;
+}
+
+/**
+ * Called by the webhook when a payment is captured: e-mails the donor their receipt, once.
+ * The row is claimed first (receipt_sent_at set only if still empty), so two deliveries never send two e-mails;
+ * if sending fails the claim is released and an admin can resend from the panel.
+ */
+export async function emailReceiptForPayment({ supabase, mailer }: { supabase: SupabaseClient; mailer: Mailer }, paymentId: string): Promise<"sent" | "skipped"> {
+  const donation = await findDonationByPayment(supabase, paymentId);
+  if (!donation || !donation.donor_email || !canIssueReceipt(donation)) return "skipped";
+
+  const { data: claimed, error } = await supabase
+    .from("donations")
+    .update({ receipt_sent_at: new Date().toISOString() })
+    .eq("id", donation.id)
+    .is("receipt_sent_at", null)
+    .select("id");
+  if (error) throw new Error(error.message);
+  if (!claimed?.length) return "skipped";
+
+  try {
+    await mailer.send({
+      to: donation.donor_email,
+      subject: `Donation receipt ${receiptNo(donation)}`,
+      text: "Thank you for your donation. Your receipt is below.",
+      html: renderReceipt(donation)
+    });
+  } catch (e) {
+    await supabase.from("donations").update({ receipt_sent_at: null }).eq("id", donation.id);
+    throw e;
+  }
+  return "sent";
 }

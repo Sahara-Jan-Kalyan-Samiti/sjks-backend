@@ -95,7 +95,10 @@ Staff routes need `Authorization: Bearer <Supabase access token>` of a user with
 | GET    | `/api/public/projects`                | anyone                    | Published projects                                                                                         |
 | POST   | `/api/public/document-requests`       | anyone, 5 per 15 min      | Document request from the website                                                                          |
 | POST   | `/api/public/volunteers`              | anyone, 5 per 15 min      | Volunteer sign-up                                                                                          |
-| POST   | `/api/webhooks/razorpay`              | Razorpay (HMAC signature) | Record payments and refunds                                                                                |
+| POST   | `/api/public/donations/order`         | anyone, 10 per 15 min     | Create a Razorpay order for the donate page (amount, name, email, optional PAN)                            |
+| POST   | `/api/public/donations/verify`        | anyone                    | Check the signed payment proof returned by Razorpay Checkout                                               |
+| GET    | `/api/public/donations/receipt`       | donor (signed proof)      | Printable receipt for a successful website donation                                                        |
+| POST   | `/api/webhooks/razorpay`              | Razorpay (HMAC signature) | Record payments and refunds; e-mails the donor's receipt when a payment is captured                        |
 | GET    | `/api/donations/:id/receipt?type=tax` | admin, editor             | Printable receipt or 80G certificate                                                                       |
 | POST   | `/api/donations/:id/send-receipt`     | admin                     | E-mail it to the donor. Body `{ "type": "tax" }` optional                                                  |
 | GET    | `/api/exports/donations.csv`          | admin                     | All donations (formula-injection safe)                                                                     |
@@ -122,6 +125,7 @@ See `.env.example`. In production, secrets come from **Google Secret Manager** (
 | ----------------------------------------------------------- | ------------- | -------------------------------------------------------------------------------------------------- |
 | `SUPABASE_URL`                                              | no            | Project URL                                                                                        |
 | `SUPABASE_SERVICE_ROLE_KEY`                                 | **yes**       | Full database access                                                                               |
+| `RAZORPAY_KEY_ID` `RAZORPAY_KEY_SECRET`                     | secret: **yes** | Create orders for the website donate page and check payment proof. Optional: without them the donate form says online payment is not configured        |
 | `RAZORPAY_WEBHOOK_SECRET`                                   | **yes**       | Verify webhooks. Required when `NODE_ENV=production`: the server refuses to start without it       |
 | `CORS_ORIGINS`                                              | prod          | Website and admin origins, comma separated. Locally: `http://localhost:3000,http://localhost:5174` |
 | `TRUST_PROXY`                                               | no            | `true` on Cloud Run                                                                                |
