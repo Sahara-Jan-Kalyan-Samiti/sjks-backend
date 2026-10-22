@@ -110,7 +110,9 @@ const PAN_RE = /^[A-Z]{5}[0-9]{4}[A-Z]$/;
 /** Name, e-mail and PAN the donor typed on the website, read back from the payment's notes. */
 function donorNotes(payment: RazorpayPayment): { name: string | null; email: string | null; pan: string | null } {
   const n = Array.isArray(payment.notes) ? {} : (payment.notes ?? {});
-  const pan = String(n.pan ?? "").trim().toUpperCase();
+  const pan = String(n.pan ?? "")
+    .trim()
+    .toUpperCase();
   return { name: n.name ? String(n.name).slice(0, 120) : null, email: n.email ? String(n.email).slice(0, 160) : null, pan: PAN_RE.test(pan) ? pan : null };
 }
 

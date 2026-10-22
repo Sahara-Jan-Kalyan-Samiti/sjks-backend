@@ -88,7 +88,10 @@ export async function findDonationByPayment(supabase: SupabaseClient, paymentId:
  * The row is claimed first (receipt_sent_at set only if still empty), so two deliveries never send two e-mails;
  * if sending fails the claim is released and an admin can resend from the panel.
  */
-export async function emailReceiptForPayment({ supabase, mailer }: { supabase: SupabaseClient; mailer: Mailer }, paymentId: string): Promise<"sent" | "skipped"> {
+export async function emailReceiptForPayment(
+  { supabase, mailer }: { supabase: SupabaseClient; mailer: Mailer },
+  paymentId: string
+): Promise<"sent" | "skipped"> {
   const donation = await findDonationByPayment(supabase, paymentId);
   if (!donation || !donation.donor_email || !canIssueReceipt(donation)) return "skipped";
 

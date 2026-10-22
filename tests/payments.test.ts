@@ -80,7 +80,11 @@ describe("processRazorpayEvent", () => {
 describe("donor details from the website order", () => {
   it("keeps the PAN and falls back to the e-mail typed on the page", async () => {
     const store = new MemoryPaymentStore();
-    await processRazorpayEvent(store, "e1", paymentEvent("payment.captured", "captured", { email: undefined, notes: { name: "Asha", email: "typed@example.org", pan: "abcde1234f" } }));
+    await processRazorpayEvent(
+      store,
+      "e1",
+      paymentEvent("payment.captured", "captured", { email: undefined, notes: { name: "Asha", email: "typed@example.org", pan: "abcde1234f" } })
+    );
     expect(store.donations[0]).toMatchObject({ donor_name: "Asha", donor_email: "typed@example.org", donor_pan: "ABCDE1234F" });
   });
 
