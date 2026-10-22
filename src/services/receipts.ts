@@ -1,4 +1,5 @@
 import { orgConfig } from "../config/org.js";
+import { logoDataUri, signatureDataUri } from "../config/receiptAssets.js";
 import { financialYear, rupeesInWords, toPaise } from "../utils/money.js";
 
 export interface DonationRecord {
@@ -44,7 +45,7 @@ export function taxEligibility(d: DonationRecord): { ok: boolean; reason: string
 const CSS = `body{font-family:Arial,Helvetica,sans-serif;color:#1d2433;margin:0;background:#f3f5f8}.sheet{max-width:760px;margin:16px auto;background:#fff;border:1px solid #cfd6e2;padding:28px}
 h1{font-size:20px;margin:0}h2{font-size:16px;margin:18px 0 6px;text-align:center;text-transform:uppercase;letter-spacing:.04em}.muted{color:#5c6679;font-size:12px}
 table{width:100%;border-collapse:collapse;margin-top:10px}td{padding:7px 8px;border:1px solid #d9dfea;font-size:13px;vertical-align:top}td.k{width:34%;background:#f6f8fb;font-weight:bold}
-.note{margin-top:14px;font-size:12px;line-height:1.5}.sig{margin-top:40px;text-align:right;font-size:13px}.bar{max-width:760px;margin:12px auto;text-align:right}
+table.head{margin:0 0 4px}table.head td{border:0;padding:0 12px 0 0}td.logo{width:1%;white-space:nowrap}.sig img{display:inline-block;margin:6px 0}.note{margin-top:14px;font-size:12px;line-height:1.5}.sig{margin-top:40px;text-align:right;font-size:13px}.bar{max-width:760px;margin:12px auto;text-align:right}
 .bar button{padding:8px 16px;background:#1479d1;color:#fff;border:0;border-radius:6px;cursor:pointer}@media print{.bar{display:none}body{background:#fff}.sheet{border:0;margin:0}}`;
 
 export interface RenderOptions {
@@ -68,11 +69,11 @@ export function renderReceipt(d: DonationRecord, { tax = false, forPage = false,
       ? `${esc(o.name)} is a tax-exempt organization under Section 501(c)(3)${t.ein ? " (EIN " + esc(t.ein) + ")" : ""}. No goods or services were provided in exchange for this contribution.`
       : `Donation is eligible for deduction under Section 80G of the Income-tax Act, 1961 (Approval/Registration No. ${esc(t.registrationNo)}, valid ${esc(t.validity)}), subject to applicable rules. ${t.section12A ? "Section 12A Reg. No. " + esc(t.section12A) + "." : ""}`;
   const heading = isTax ? (t.type === "501c3" ? "Donation Tax Receipt" : "Donation Certificate (Section 80G)") : "Donation Receipt";
-  const body = `<div class="sheet"><h1>${esc(o.name)}</h1><div class="muted">${esc(o.address)}<br>${esc(o.email)} · ${esc(o.phone)} · PAN ${esc(o.pan)}</div>
+  const body = `<div class="sheet"><table class="head"><tr><td class="logo"><img src="${logoDataUri}" alt="${esc(o.name)}" height="64"></td><td class="org"><h1>${esc(o.name)}</h1><div class="muted">${esc(o.address)}<br>${esc(o.email)} · ${esc(o.phone)} · PAN ${esc(o.pan)}</div></td></tr></table>
 <h2>${heading}</h2>
 <table>${row("Receipt No.", receiptNo(d, isTax))}${row("Date of donation", formatDate(d.donated_at))}${row("Received from", d.donor_name || "Well-wisher")}${isTax || d.donor_pan ? row("Donor PAN", d.donor_pan) : ""}${row("Address", d.donor_address)}${row("Email", d.donor_email)}
 ${row("Amount", amountText)}${d.currency === "INR" ? row("Amount in words", rupeesInWords(toPaise(amount))) : ""}${row("Mode of payment", [d.method, d.mode].filter(Boolean).join(" / "))}${row("Payment reference", d.gateway_payment_id || d.reference)}${row("Purpose", d.purpose)}</table>
-<p class="note">${statement}</p><div class="sig">For ${esc(o.name)}<br><br>${esc(o.signatory)}</div></div>`;
+<p class="note">${statement}</p><div class="sig">For ${esc(o.name)}<br><img src="${signatureDataUri}" alt="Signature" height="56"><br>${esc(o.signatory)}</div></div>`;
   if (!forPage) return `<!doctype html><html><head><meta charset="utf-8"><style>${CSS}</style></head><body>${body}</body></html>`;
   return `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Receipt ${esc(receiptNo(d, isTax))}</title><style>${CSS}</style></head><body><div class="bar"><button id="print">Print / Save as PDF</button></div>${body}<script nonce="${nonce}">document.getElementById("print").addEventListener("click",function(){window.print()})</script></body></html>`;
 }

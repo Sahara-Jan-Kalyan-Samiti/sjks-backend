@@ -49,7 +49,10 @@ export function publicDonationRoutes({ gateway, supabase }: AppDeps): Router {
       // The webhook can arrive a few seconds after the browser callback.
       if (!donation || !canIssueReceipt(donation)) throw new HttpError(404, "Your receipt is being prepared. It will also be e-mailed to you.");
       const nonce = randomBytes(16).toString("base64");
-      res.setHeader("Content-Security-Policy", `default-src 'none'; style-src 'unsafe-inline'; script-src 'nonce-${nonce}'; frame-ancestors 'none'`);
+      res.setHeader(
+        "Content-Security-Policy",
+        `default-src 'none'; img-src data:; style-src 'unsafe-inline'; script-src 'nonce-${nonce}'; frame-ancestors 'none'`
+      );
       res.type("html").send(renderReceipt(donation, { forPage: true, nonce }));
     })
   );
