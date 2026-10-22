@@ -3,6 +3,7 @@
 import { createApp } from "../dist/app.js";
 import { parseEnv } from "../dist/config/env.js";
 import { createSupabaseAuthenticator } from "../dist/middleware/requireAuth.js";
+import { createGateway } from "../dist/services/gateway.js";
 import { createMailer } from "../dist/services/mailer.js";
 import { createPaymentStore } from "../dist/services/paymentStore.js";
 import { createSupabase } from "../dist/services/supabase.js";
@@ -15,5 +16,6 @@ export default createApp({
   supabase,
   auth: createSupabaseAuthenticator(supabase),
   payments: createPaymentStore(supabase),
+  gateway: createGateway(env),
   mailer: createMailer(env)
 });

@@ -1,8 +1,10 @@
 import cors from "cors";
 import express, { type Express } from "express";
 import helmet from "helmet";
+import swaggerUi from "swagger-ui-express";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Env } from "./config/env.js";
+import { openApiSpec } from "./config/openapi.js";
 import { errorHandler, notFoundHandler } from "./middleware/errorHandler.js";
 import { apiLimiter } from "./middleware/rateLimit.js";
 import { requestContext } from "./middleware/requestContext.js";
@@ -12,9 +14,11 @@ import { broadcastRoutes } from "./routes/broadcast.js";
 import { donationRoutes } from "./routes/donations.js";
 import { healthRoutes } from "./routes/health.js";
 import { publicRoutes } from "./routes/public.js";
+import { publicDonationRoutes } from "./routes/publicDonations.js";
 import { requestRoutes } from "./routes/requests.js";
 import { siteFormRoutes } from "./routes/siteForms.js";
 import { webhookRoutes } from "./routes/webhooks.js";
+import type { PaymentGateway } from "./services/gateway.js";
 import type { Mailer } from "./services/mailer.js";
 import type { PaymentStore } from "./services/payments.js";
 
@@ -24,6 +28,7 @@ export interface AppDeps {
   supabase: SupabaseClient;
   auth: Authenticator;
   payments: PaymentStore;
+  gateway: PaymentGateway;
   mailer: Mailer;
 }
 
@@ -32,6 +37,12 @@ export function createApp(deps: AppDeps): Express {
   app.disable("x-powered-by");
   if (deps.env.TRUST_PROXY) app.set("trust proxy", 1); // Cloud Run sits behind Google's proxy
   app.use(requestContext);
+
+  // Swagger UI for trying the API by hand. Mounted before helmet (its page needs inline scripts) and never exposed in production.
+  if (deps.env.NODE_ENV !== "production") {
+    app.use("/docs", swaggerUi.serve, swaggerUi.setup(openApiSpec, { customSiteTitle: "SJKS API", swaggerOptions: { persistAuthorization: true } }));
+  }
+
   app.use(helmet());
 
   // The Razorpay webhook needs the exact raw bytes to check the signature, so it is mounted before the JSON parser.
@@ -49,7 +60,7 @@ export function createApp(deps: AppDeps): Express {
 
   app.use(healthRoutes(deps.supabase));
   app.use("/api", apiLimiter);
-  app.use("/api/public", publicRoutes(deps), siteFormRoutes(deps));
+  app.use("/api/public", publicRoutes(deps), siteFormRoutes(deps), publicDonationRoutes(deps));
   app.use("/api/donations", donationRoutes(deps));
   app.use("/api/exports", donationRoutes(deps, { exportsOnly: true }));
   app.use("/api/requests", requestRoutes(deps));
