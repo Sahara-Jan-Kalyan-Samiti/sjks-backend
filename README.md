@@ -121,16 +121,16 @@ Staff routes need `Authorization: Bearer <Supabase access token>` of a user with
 
 See `.env.example`. In production, secrets come from **Google Secret Manager** (never from git).
 
-| Variable                                                    | Secret        | Purpose                                                                                            |
-| ----------------------------------------------------------- | ------------- | -------------------------------------------------------------------------------------------------- |
-| `SUPABASE_URL`                                              | no            | Project URL                                                                                        |
-| `SUPABASE_SERVICE_ROLE_KEY`                                 | **yes**       | Full database access                                                                               |
-| `RAZORPAY_KEY_ID` `RAZORPAY_KEY_SECRET`                     | secret: **yes** | Create orders for the website donate page and check payment proof. Optional: without them the donate form says online payment is not configured        |
-| `RAZORPAY_WEBHOOK_SECRET`                                   | **yes**       | Verify webhooks. Required when `NODE_ENV=production`: the server refuses to start without it       |
-| `CORS_ORIGINS`                                              | prod          | Website and admin origins, comma separated. Locally: `http://localhost:3000,http://localhost:5174` |
-| `TRUST_PROXY`                                               | no            | `true` on Cloud Run                                                                                |
-| `SMTP_HOST` `SMTP_PORT` `SMTP_USER` `SMTP_PASS` `SMTP_FROM` | pass: **yes** | Outgoing e-mail (without it, send endpoints answer 503 with a clear message)                       |
-| `PORT`                                                      | no            | Set by Cloud Run (8080)                                                                            |
+| Variable                                                    | Secret          | Purpose                                                                                                                                         |
+| ----------------------------------------------------------- | --------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
+| `SUPABASE_URL`                                              | no              | Project URL                                                                                                                                     |
+| `SUPABASE_SERVICE_ROLE_KEY`                                 | **yes**         | Full database access                                                                                                                            |
+| `RAZORPAY_KEY_ID` `RAZORPAY_KEY_SECRET`                     | secret: **yes** | Create orders for the website donate page and check payment proof. Optional: without them the donate form says online payment is not configured |
+| `RAZORPAY_WEBHOOK_SECRET`                                   | **yes**         | Verify webhooks. Required when `NODE_ENV=production`: the server refuses to start without it                                                    |
+| `CORS_ORIGINS`                                              | prod            | Website and admin origins, comma separated. Locally: `http://localhost:3000,http://localhost:5174`                                              |
+| `TRUST_PROXY`                                               | no              | `true` on Cloud Run                                                                                                                             |
+| `SMTP_HOST` `SMTP_PORT` `SMTP_USER` `SMTP_PASS` `SMTP_FROM` | pass: **yes**   | Outgoing e-mail (without it, send endpoints answer 503 with a clear message)                                                                    |
+| `PORT`                                                      | no              | Set by Cloud Run (8080)                                                                                                                         |
 
 ## Deployment (Google Cloud Run)
 
