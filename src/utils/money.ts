@@ -31,7 +31,10 @@ export function rupeesInWords(totalPaise: number): string {
 
 /** Indian financial year of a date: 2026-05-01 → "2026-27", 2026-02-01 → "2025-26". */
 export function financialYear(dateStr: string): string {
-  const d = new Date(dateStr);
-  const y = d.getMonth() >= 3 ? d.getFullYear() : d.getFullYear() - 1;
+  // Read the year and month straight from "YYYY-MM-DD": parsing through Date would shift the day in some server timezones.
+  const m = /^(\d{4})-(\d{2})/.exec(dateStr);
+  const year = m ? Number(m[1]) : new Date(dateStr).getFullYear();
+  const month = m ? Number(m[2]) - 1 : new Date(dateStr).getMonth();
+  const y = month >= 3 ? year : year - 1;
   return `${y}-${String((y + 1) % 100).padStart(2, "0")}`;
 }

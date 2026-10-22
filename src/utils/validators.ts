@@ -77,3 +77,30 @@ export const createAdminSchema = z.object({
     .optional()
     .transform((v) => v || null)
 });
+
+/** Website donation: whole rupees, 1 to 1 crore. PAN is optional and needed only for the 80G certificate. */
+export const donationOrderSchema = z.object({
+  amount: z.number().int("Enter a whole rupee amount").min(1, "Amount must be at least ₹1").max(10_000_000, "Amount is too large"),
+  name: required("Name", 80),
+  email,
+  phone: z
+    .string()
+    .trim()
+    .optional()
+    .transform((v) => v || null)
+    .refine((v) => v === null || isPhone(v), "Phone number looks invalid"),
+  pan: z
+    .string()
+    .trim()
+    .toUpperCase()
+    .optional()
+    .transform((v) => v || null)
+    .refine((v) => v === null || /^[A-Z]{5}[0-9]{4}[A-Z]$/.test(v), "PAN must look like ABCDE1234F")
+});
+
+/** What Razorpay Checkout hands back in the browser after a payment. */
+export const paymentProofSchema = z.object({
+  order_id: z.string().regex(/^order_\w{6,40}$/),
+  payment_id: z.string().regex(/^pay_\w{6,40}$/),
+  signature: z.string().regex(/^[0-9a-f]{64}$/)
+});
