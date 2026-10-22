@@ -9,6 +9,7 @@ export interface PaymentDonation {
   donor_name?: string | null;
   donor_email?: string | null;
   donor_phone?: string | null;
+  donor_pan?: string | null;
   notes?: string | null;
 }
 export type DonationInsert = Record<string, unknown> & { gateway_payment_id: string };
@@ -37,7 +38,8 @@ interface RazorpayPayment {
   contact?: string;
   created_at?: number;
   error_description?: string | null;
-  notes?: { name?: string } | unknown[];
+  /** Set by the website when it creates the order (see gateway.ts); an empty array when Razorpay has none. */
+  notes?: { name?: string; email?: string; phone?: string; pan?: string; source?: string } | unknown[];
 }
 interface RazorpayRefund {
   id: string;
@@ -97,8 +99,23 @@ async function apply(store: PaymentStore, evt: RazorpayEvent, eventId: string): 
   return update(store, existing, payment, next, eventId);
 }
 
+/** True for a payment started from the website donate form (it tags its payments with source "website"); false for Razorpay.me links and the like. */
+export function isWebsiteDonation(evt: RazorpayEvent): boolean {
+  const notes = evt.payload?.payment?.entity?.notes;
+  return !Array.isArray(notes) && notes?.source === "website";
+}
+
+const PAN_RE = /^[A-Z]{5}[0-9]{4}[A-Z]$/;
+
+/** Name, e-mail and PAN the donor typed on the website, read back from the payment's notes. */
+function donorNotes(payment: RazorpayPayment): { name: string | null; email: string | null; pan: string | null } {
+  const n = Array.isArray(payment.notes) ? {} : (payment.notes ?? {});
+  const pan = String(n.pan ?? "").trim().toUpperCase();
+  return { name: n.name ? String(n.name).slice(0, 120) : null, email: n.email ? String(n.email).slice(0, 160) : null, pan: PAN_RE.test(pan) ? pan : null };
+}
+
 function newRow(payment: RazorpayPayment, status: DonationStatus): DonationInsert {
-  const name = !Array.isArray(payment.notes) && payment.notes?.name ? String(payment.notes.name).slice(0, 120) : null;
+  const note = donorNotes(payment);
   return {
     mode: "online",
     gateway: "Razorpay",
@@ -111,9 +128,10 @@ function newRow(payment: RazorpayPayment, status: DonationStatus): DonationInser
     method: payment.method || "Razorpay",
     donated_at: isoDate(payment.created_at),
     gateway_error: payment.error_description ?? null,
-    donor_email: payment.email ?? null,
+    donor_email: payment.email ?? note.email,
     donor_phone: payment.contact ?? null,
-    donor_name: name
+    donor_name: note.name,
+    donor_pan: note.pan
   };
 }
 
@@ -137,6 +155,9 @@ async function update(store: PaymentStore, existing: PaymentDonation, payment: R
   // Donor details entered by an admin are kept; only blanks are filled from the payment.
   if (!existing.donor_email && payment.email) patch.donor_email = payment.email;
   if (!existing.donor_phone && payment.contact) patch.donor_phone = payment.contact;
+  const note = donorNotes(payment);
+  if (!existing.donor_name && note.name) patch.donor_name = note.name;
+  if (!existing.donor_pan && note.pan) patch.donor_pan = note.pan;
   await store.updateDonation(existing.id, patch);
   return "updated";
 }
