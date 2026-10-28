@@ -72,7 +72,9 @@ export function canTransition(from: DonationStatus, to: DonationStatus): boolean
   return false; // failed, refunded and cancelled are final
 }
 
-const isoDate = (unixSeconds?: number): string => new Date((unixSeconds ?? Date.now() / 1000) * 1000).toISOString().slice(0, 10);
+/** The calendar date in India (not UTC), so a payment at 1 am on 1 April is dated 1 April and lands in the right financial year. */
+export const isoDate = (unixSeconds?: number): string =>
+  new Date((unixSeconds ?? Date.now() / 1000) * 1000).toLocaleDateString("en-CA", { timeZone: "Asia/Kolkata" });
 
 export async function processRazorpayEvent(store: PaymentStore, eventId: string, evt: RazorpayEvent): Promise<Outcome> {
   const stored = await store.recordEvent({ provider: "razorpay", event_id: eventId, event_type: evt.event, payload: evt });

@@ -8,7 +8,17 @@ export interface OrgConfig {
   pan: string;
   receiptPrefix: string;
   signatory: string;
-  taxReceipt: { enabled: boolean; type: "80G" | "501c3"; registrationNo: string; validity: string; section12A: string; ein: string; cashLimit: number };
+  taxReceipt: {
+    enabled: boolean;
+    type: "80G" | "501c3";
+    registrationNo: string;
+    validity: string;
+    orderDate?: string;
+    approvalClause?: string;
+    section12A: string;
+    ein: string;
+    cashLimit: number;
+  };
   defaultRequestMessage: string;
 }
 

@@ -67,7 +67,7 @@ export function renderReceipt(d: DonationRecord, { tax = false, forPage = false,
     ? "This receipt acknowledges the donation received with thanks."
     : t.type === "501c3"
       ? `${esc(o.name)} is a tax-exempt organization under Section 501(c)(3)${t.ein ? " (EIN " + esc(t.ein) + ")" : ""}. No goods or services were provided in exchange for this contribution.`
-      : `Donation is eligible for deduction under Section 80G of the Income-tax Act, 1961 (Approval/Registration No. ${esc(t.registrationNo)}, valid ${esc(t.validity)}), subject to applicable rules. ${t.section12A ? "Section 12A Reg. No. " + esc(t.section12A) + "." : ""}`;
+      : `Exemption u/s 80G of the Income-tax Act, 1961: ${t.orderDate ? "order approved on " + esc(t.orderDate) + ". " : ""}80G Unique Registration Number ${esc(t.registrationNo)}, valid ${esc(t.validity)}${t.approvalClause ? ", approved under " + esc(t.approvalClause) : ""}. PAN: ${esc(o.pan)}. Subject to applicable rules. ${t.section12A ? "Section 12A Reg. No. " + esc(t.section12A) + "." : ""}`;
   const heading = isTax ? (t.type === "501c3" ? "Donation Tax Receipt" : "Donation Certificate (Section 80G)") : "Donation Receipt";
   const body = `<div class="sheet"><table class="head"><tr><td class="logo"><img src="${logoDataUri}" alt="${esc(o.name)}" height="64"></td><td class="org"><h1>${esc(o.name)}</h1><div class="muted">${esc(o.address)}<br>${esc(o.email)} · ${esc(o.phone)} · PAN ${esc(o.pan)}</div></td></tr></table>
 <h2>${heading}</h2>

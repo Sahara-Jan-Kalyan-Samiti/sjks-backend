@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { canTransition, processRazorpayEvent } from "../src/services/payments.js";
+import { canTransition, isoDate, processRazorpayEvent } from "../src/services/payments.js";
 import { MemoryPaymentStore, paymentEvent } from "./helpers.js";
 
 describe("canTransition", () => {
@@ -92,5 +92,13 @@ describe("donor details from the website order", () => {
     const store = new MemoryPaymentStore();
     await processRazorpayEvent(store, "e1", paymentEvent("payment.captured", "captured", { notes: { name: "Asha", pan: "bad" } }));
     expect(store.donations[0].donor_pan).toBeNull();
+  });
+});
+
+describe("donation date", () => {
+  it("uses the date in India, not UTC", () => {
+    // 01:00 IST on 1 April 2026 is still 31 March in UTC
+    expect(isoDate(Date.UTC(2026, 2, 31, 19, 30) / 1000)).toBe("2026-04-01");
+    expect(isoDate(Date.UTC(2026, 2, 31, 17, 0) / 1000)).toBe("2026-03-31");
   });
 });

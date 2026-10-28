@@ -47,7 +47,7 @@ export function publicDonationRoutes({ gateway, supabase }: AppDeps): Router {
       if (!gateway.verifyPayment(p.order_id, p.payment_id, p.signature)) throw new HttpError(400, "Payment could not be verified");
       const donation = await findDonationByPayment(supabase, p.payment_id);
       // The webhook can arrive a few seconds after the browser callback.
-      if (!donation || !canIssueReceipt(donation)) throw new HttpError(404, "Your receipt is being prepared. It will also be e-mailed to you.");
+      if (!donation || !canIssueReceipt(donation)) throw new HttpError(404, "Your receipt is still being prepared. Please try again in a minute.");
       const nonce = randomBytes(16).toString("base64");
       res.setHeader(
         "Content-Security-Policy",
