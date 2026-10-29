@@ -68,8 +68,8 @@ describe("payment proof", () => {
       .get("/api/public/donations/receipt")
       .query(query);
     expect(done.status).toBe(200);
-    expect(done.text).toContain("SJKS/2026-27/00007");
-    expect(done.text).toContain("₹ 500.00");
+    expect(done.text).toContain("2026-2027/SJKS-EReceipt/000007");
+    expect(done.text).toContain("INR 500.00 only");
     expect(done.text).toContain("01-05-2026");
   });
 
@@ -93,7 +93,7 @@ describe("receipt e-mail after payment", () => {
     expect(res.status).toBe(200);
     expect(mailer.sent).toHaveLength(1);
     expect(mailer.sent[0].to).toBe("asha@example.org");
-    expect(mailer.sent[0].subject).toContain("SJKS/2026-27/00007");
+    expect(mailer.sent[0].subject).toContain("2026-2027/SJKS-EReceipt/000007");
   });
 
   it("leaves payments that did not come from the website form alone (e.g. a Razorpay.me link)", async () => {

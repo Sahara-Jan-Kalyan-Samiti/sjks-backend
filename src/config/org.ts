@@ -8,6 +8,8 @@ export interface OrgConfig {
   pan: string;
   receiptPrefix: string;
   signatory: string;
+  /** The header printed on donation receipts. */
+  receipt: { regNo: string; address: string; phone: string; email: string };
   taxReceipt: {
     enabled: boolean;
     type: "80G" | "501c3";

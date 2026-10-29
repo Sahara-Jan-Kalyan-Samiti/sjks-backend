@@ -12,6 +12,7 @@ export interface DonationRecord {
   mode?: string | null;
   donor_name?: string | null;
   donor_email?: string | null;
+  donor_phone?: string | null;
   donor_pan?: string | null;
   donor_address?: string | null;
   purpose?: string | null;
@@ -22,9 +23,11 @@ export interface DonationRecord {
 const esc = (s: unknown): string =>
   String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c] as string);
 
-/** SJKS/2026-27/00042 (tax certificates: SJKS/TAX/2026-27/00042). The sequence is the donation id. */
-export const receiptNo = (d: Pick<DonationRecord, "id" | "donated_at">, tax = false): string =>
-  `${orgConfig.receiptPrefix}/${tax ? "TAX/" : ""}${financialYear(d.donated_at)}/${String(d.id).padStart(5, "0")}`;
+/** 2026-2027/SJKS-EReceipt/000042. The sequence is the donation id; a tax certificate carries the same number as the receipt. */
+export const receiptNo = (d: Pick<DonationRecord, "id" | "donated_at">): string => {
+  const start = financialYear(d.donated_at).slice(0, 4);
+  return `${start}-${Number(start) + 1}/${orgConfig.receiptPrefix}/${String(d.id).padStart(6, "0")}`;
+};
 
 /** "2026-04-01" → "01-04-2026" (the database column is a plain date). */
 export const formatDate = (iso: string): string => (/^\d{4}-\d{2}-\d{2}/.test(iso) ? iso.slice(0, 10).split("-").reverse().join("-") : iso);
@@ -42,13 +45,14 @@ export function taxEligibility(d: DonationRecord): { ok: boolean; reason: string
   return { ok: true, reason: "" };
 }
 
-const CSS = `body{font-family:Arial,Helvetica,sans-serif;color:#1d2433;margin:0;background:#f3f5f8}.sheet{max-width:760px;margin:16px auto;background:#fff;border:1px solid #cfd6e2;padding:28px}
-h1{font-size:20px;margin:0}h2{font-size:16px;margin:18px 0 6px;text-align:center;text-transform:uppercase;letter-spacing:.04em}.muted{color:#5c6679;font-size:12px}
-table{width:100%;border-collapse:collapse;margin-top:10px}td{padding:7px 8px;border:1px solid #d9dfea;font-size:13px;vertical-align:top}td.k{width:34%;background:#f6f8fb;font-weight:bold}
-table.head{margin:0 0 4px}table.head td{border:0;padding:0 12px 0 0}td.logo{width:1%;white-space:nowrap}.sig img{display:inline-block;margin:6px 0}.note{margin-top:14px;font-size:12px;line-height:1.5}.sig{margin-top:40px;text-align:right;font-size:13px}.bar{max-width:760px;margin:12px auto;text-align:right}
+const CSS = `body{font-family:"Times New Roman",Times,serif;color:#111;margin:0;background:#f3f5f8}.sheet{max-width:760px;margin:16px auto;background:#fff;border:1px solid #cfd6e2;padding:30px 34px;font-size:15px;line-height:1.5}
+.logo{display:block}.reg{text-align:right;margin-top:6px}.addr{text-align:center;margin:2px 0 6px}.rule{border:0;border-top:1px solid #777;margin:6px 0 8px}
+.no{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap}.donor{margin:14px 0 0;line-height:1.6}.recv{margin:22px 0 14px;font-weight:bold;text-align:justify}p{margin:0 0 14px;text-align:justify}
+.amt{margin-top:26px}.small{font-size:12px;color:#555;margin-top:18px}.sig{margin-top:30px;text-align:right}.sig img{display:inline-block;margin:6px 0}.bar{max-width:760px;margin:12px auto;text-align:right}
 .bar button{padding:8px 16px;background:#1479d1;color:#fff;border:0;border-radius:6px;cursor:pointer}@media print{.bar{display:none}body{background:#fff}.sheet{border:0;margin:0}}`;
 
 export interface RenderOptions {
+  /** Kept for callers that ask for the "tax" version: the receipt itself now carries the 80G details whenever the donation qualifies. */
   tax?: boolean;
   /** Full printable page (with a Print button) instead of an e-mail-safe fragment. */
   forPage?: boolean;
@@ -56,24 +60,53 @@ export interface RenderOptions {
   nonce?: string;
 }
 
-export function renderReceipt(d: DonationRecord, { tax = false, forPage = false, nonce = "" }: RenderOptions = {}): string {
+/** "AAHTS0799M" → "AAH TS0799M" (as printed on the Samiti's receipts). */
+const spacedPan = (pan: string): string => pan.replace(/^(\w{3})(\w+)$/, "$1 $2");
+
+export function renderReceipt(d: DonationRecord, { forPage = false, nonce = "" }: RenderOptions = {}): string {
   const o = orgConfig;
   const t = o.taxReceipt;
-  const isTax = tax && taxEligibility(d).ok;
-  const row = (k: string, v: unknown) => (v ? `<tr><td class="k">${esc(k)}</td><td>${esc(v)}</td></tr>` : "");
+  const r = o.receipt;
   const amount = Number(d.amount);
-  const amountText = d.currency === "INR" ? `₹ ${amount.toLocaleString("en-IN", { minimumFractionDigits: 2 })}` : `${d.currency} ${amount.toFixed(2)}`;
-  const statement = !isTax
-    ? "This receipt acknowledges the donation received with thanks."
-    : t.type === "501c3"
-      ? `${esc(o.name)} is a tax-exempt organization under Section 501(c)(3)${t.ein ? " (EIN " + esc(t.ein) + ")" : ""}. No goods or services were provided in exchange for this contribution.`
-      : `Exemption u/s 80G of the Income-tax Act, 1961: ${t.orderDate ? "order approved on " + esc(t.orderDate) + ". " : ""}80G Unique Registration Number ${esc(t.registrationNo)}, valid ${esc(t.validity)}${t.approvalClause ? ", approved under " + esc(t.approvalClause) : ""}. PAN: ${esc(o.pan)}. Subject to applicable rules. ${t.section12A ? "Section 12A Reg. No. " + esc(t.section12A) + "." : ""}`;
-  const heading = isTax ? (t.type === "501c3" ? "Donation Tax Receipt" : "Donation Certificate (Section 80G)") : "Donation Receipt";
-  const body = `<div class="sheet"><table class="head"><tr><td class="logo"><img src="${logoDataUri}" alt="${esc(o.name)}" height="64"></td><td class="org"><h1>${esc(o.name)}</h1><div class="muted">${esc(o.address)}<br>${esc(o.email)} · ${esc(o.phone)} · PAN ${esc(o.pan)}</div></td></tr></table>
-<h2>${heading}</h2>
-<table>${row("Receipt No.", receiptNo(d, isTax))}${row("Date of donation", formatDate(d.donated_at))}${row("Received from", d.donor_name || "Well-wisher")}${isTax || d.donor_pan ? row("Donor PAN", d.donor_pan) : ""}${row("Address", d.donor_address)}${row("Email", d.donor_email)}
-${row("Amount", amountText)}${d.currency === "INR" ? row("Amount in words", rupeesInWords(toPaise(amount))) : ""}${row("Mode of payment", [d.method, d.mode].filter(Boolean).join(" / "))}${row("Payment reference", d.gateway_payment_id || d.reference)}${row("Purpose", d.purpose)}</table>
-<p class="note">${statement}</p><div class="sig">For ${esc(o.name)}<br><img src="${signatureDataUri}" alt="Signature" height="56"><br>${esc(o.signatory)}</div></div>`;
+  const isInr = d.currency === "INR";
+  const amountText = isInr ? amount.toLocaleString("en-IN", { minimumFractionDigits: 2 }) : amount.toFixed(2);
+  // "One Thousand Rupees Only" → "One Thousand Rupees" (the sentence adds its own "only")
+  const sum = isInr ? rupeesInWords(toPaise(amount)).replace(/ Only$/, "") : `${d.currency} ${amountText}`;
+  const from = `${esc(d.donor_name || "Well-wisher")}${d.donor_pan ? `, PAN No ${esc(d.donor_pan)}` : ""}`;
+  const exemption =
+    t.enabled && taxEligibility(d).ok
+      ? t.type === "501c3"
+        ? `<p>${esc(o.name)} is a tax-exempt organization under Section 501(c)(3)${t.ein ? " (EIN " + esc(t.ein) + ")" : ""}. No goods or services were provided in exchange for this contribution.</p>`
+        : `<p>EXEMPTION U/S.80-G OF THE I.T. ACT${t.orderDate ? " order approved on <b>" + esc(t.orderDate) + "</b>" : ""}, 80G Unique Registration Number <b>${esc(t.registrationNo)}</b>, valid ${esc(t.validity)}${t.approvalClause ? ", approved under " + esc(t.approvalClause) : ""}.</p>
+<p>PAN NO.: <b>${esc(spacedPan(o.pan))}</b></p>`
+      : "";
+  const donorLines = [
+    ["Name", d.donor_name || "Well-wisher"],
+    ["Email", d.donor_email],
+    ["Phone", d.donor_phone],
+    ["PAN", d.donor_pan],
+    ["Address", d.donor_address]
+  ]
+    .filter(([, v]) => v)
+    .map(([k, v]) => `<b>${k}:</b> ${esc(v)}`)
+    .join("<br>");
+  const details = [
+    [d.method, d.mode].filter(Boolean).join(" / ") && `Mode: ${[d.method, d.mode].filter(Boolean).join(" / ")}`,
+    (d.gateway_payment_id || d.reference) && `Ref: ${d.gateway_payment_id || d.reference}`,
+    d.purpose && `Purpose: ${d.purpose}`
+  ]
+    .filter(Boolean)
+    .map((x) => esc(x))
+    .join(" · ");
+  const body = `<div class="sheet"><img class="logo" src="${logoDataUri}" alt="${esc(o.name)}" height="84">
+<div class="reg">Regd. No. ${esc(r.regNo)}</div>
+<div class="addr">${esc(r.address)}<br>Tel: ${esc(r.phone)} &nbsp; Email: ${esc(r.email)}</div><hr class="rule">
+<div class="no"><span><b>Receipt No.</b> ${esc(receiptNo(d))}</span><span><b>Receipt Date:</b> ${esc(formatDate(d.donated_at))}</span></div>
+<div class="donor"><b>Donor details</b><br>${donorLines}</div>
+<p class="recv">Received with thanks from ${from} the sum of ${isInr ? esc(sum) : esc(sum)} only as donations.</p>
+${exemption}
+<p class="amt"><b>${esc(isInr ? "INR" : d.currency)} ${esc(amountText)} only</b><br>Subject to realization</p>
+<div class="sig">FOR ${esc(o.name.toUpperCase())}<br><img src="${signatureDataUri}" alt="Signature" height="56"><br>${esc(o.signatory)}</div>${details ? `<div class="small">${details}</div>` : ""}</div>`;
   if (!forPage) return `<!doctype html><html><head><meta charset="utf-8"><style>${CSS}</style></head><body>${body}</body></html>`;
-  return `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Receipt ${esc(receiptNo(d, isTax))}</title><style>${CSS}</style></head><body><div class="bar"><button id="print">Print / Save as PDF</button></div>${body}<script nonce="${nonce}">document.getElementById("print").addEventListener("click",function(){window.print()})</script></body></html>`;
+  return `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Receipt ${esc(receiptNo(d))}</title><style>${CSS}</style></head><body><div class="bar"><button id="print">Print / Save as PDF</button></div>${body}<script nonce="${nonce}">document.getElementById("print").addEventListener("click",function(){window.print()})</script></body></html>`;
 }
