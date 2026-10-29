@@ -52,8 +52,8 @@ describe("receipts", () => {
   };
 
   it("numbers receipts by financial year and donation id", () => {
-    expect(receiptNo(donation)).toBe("SJKS/2026-27/00042");
-    expect(receiptNo(donation, true)).toBe("SJKS/TAX/2026-27/00042");
+    expect(receiptNo(donation)).toBe("2026-2027/SJKS-EReceipt/000042");
+    expect(receiptNo({ ...donation, donated_at: "2027-02-10" })).toBe("2026-2027/SJKS-EReceipt/000042");
   });
   it("refuses a tax certificate for unsuccessful or large cash donations", () => {
     expect(taxEligibility(donation).ok).toBe(true);

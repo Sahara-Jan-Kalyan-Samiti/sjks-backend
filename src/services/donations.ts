@@ -58,7 +58,7 @@ export async function emailReceipt(
 
   await mailer.send({
     to: donation.donor_email,
-    subject: `${wantsTax ? "Tax receipt" : "Donation receipt"} ${receiptNo(donation, wantsTax)}`,
+    subject: `${wantsTax ? "Tax receipt" : "Donation receipt"} ${receiptNo(donation)}`,
     text: "Thank you for your donation. Your receipt is below.",
     html: renderReceipt(donation, { tax: wantsTax })
   });
